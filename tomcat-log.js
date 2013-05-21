@@ -6,8 +6,11 @@ var url = require('url');
 var port = process.argv[2] || 8888;
 var page = fs.readFileSync('tomcat-log.html').toString();
 var logFileName = '/var/log/tomcat7/catalina.out';
-var bufferingQueue = [];
-var tailingProcess;
+var bufferingQueues = [];
+var tailingProcesses = [];
+var terminators = [];
+
+var TERMINATE_TIMEOUT = 5000;
 
 function createUUID() {
 	var s = [];
@@ -21,31 +24,52 @@ function createUUID() {
 
 	var uuid = s.join("");
 	return uuid;
-}
+};
+
+function Connection(uuid) {
+	var that = this;
+	that.uuid = uuid;
+
+	bufferingQueues[uuid] = [];
+
+	var tailingProcess = childProcess.exec('tail -f -c 102400 ' + logFileName);
+	tailingProcess.stdout.on('data', function (data) {
+		bufferingQueues[that.uuid].push(data);
+	});
+	tailingProcesses[uuid] = tailingProcess;
+
+	terminators[uuid] = setTimeout(function () { terminate(that.uuid) }, TERMINATE_TIMEOUT);
+};
+
+function terminate(uuid) {
+	tailingProcesses[uuid].kill();
+
+	delete tailingProcesses[uuid];
+	delete bufferingQueues[uuid];
+	delete terminators[uuid];
+};
 
 var server = http.createServer(function (req, res) {
 	var request = url.parse(req.url, true);
 	switch (request.pathname) {
 		case '/':
-			if (tailingProcess) {
-				tailingProcess.kill();
-				bufferingQueue = [];
-			}
-			tailingProcess = childProcess.exec('tail -f -c 102400 ' + logFileName);
-			tailingProcess.stdout.on('data', function (data) {
-				bufferingQueue.push(data);
-			});
-
 			res.writeHead(200, { 'Content-Type': 'text/html' });
 			res.end(page);
 			break;
 		case '/getid':
+			var uuid = createUUID();
+			new Connection(uuid);
+
 			res.writeHead(200, { 'Content-Type': 'text/plain' });
-			res.end(createUUID());
+			res.end(uuid);
 			break;
 		case '/feed':
 			var uuid = request.query.id;
-			var data = bufferingQueue.shift() || "";
+			var data = bufferingQueues[uuid].shift() || "";
+
+			clearTimeout(terminators[uuid]);
+			terminators[uuid] = setTimeout(function () { terminate(uuid); }, TERMINATE_TIMEOUT);
+
 			res.writeHead(200, { 'Content-Type': 'text/plain' });
 			res.end(data);
 			break;
