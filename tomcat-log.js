@@ -38,7 +38,7 @@ function Connection(uuid) {
 	});
 	tailingProcesses[uuid] = tailingProcess;
 
-	terminators[uuid] = setTimeout(function () { terminate(that.uuid) }, TERMINATE_TIMEOUT);
+	scheduleTermination(uuid);
 };
 
 function terminate(uuid) {
@@ -47,6 +47,15 @@ function terminate(uuid) {
 	delete tailingProcesses[uuid];
 	delete bufferingQueues[uuid];
 	delete terminators[uuid];
+};
+
+function scheduleTermination(uuid) {
+	terminators[uuid] = setTimeout(function () { terminate(uuid) }, TERMINATE_TIMEOUT);
+};
+
+function delayTermination(uuid) {
+	clearTimeout(terminators[uuid]);
+	scheduleTermination(uuid);
 };
 
 var server = http.createServer(function (req, res) {
@@ -67,8 +76,7 @@ var server = http.createServer(function (req, res) {
 			var uuid = request.query.id;
 			var data = bufferingQueues[uuid].shift() || "";
 
-			clearTimeout(terminators[uuid]);
-			terminators[uuid] = setTimeout(function () { terminate(uuid); }, TERMINATE_TIMEOUT);
+			delayTermination(uuid);
 
 			res.writeHead(200, { 'Content-Type': 'text/plain' });
 			res.end(data);

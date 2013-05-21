@@ -21,14 +21,16 @@
 		<textarea id="textarea" readonly autofocus></textarea>
 
 		<script type="text/javascript">
+			var TIMEOUT = 100;
+
 			function ajax(url, callback) {
 				var method = "GET";
-				var STATE_READY = 4;
-				var STATUS_OK = 200;
+				var stateReady = 4;
+				var statusOk = 200;
 
 				var xmlhttp = (window.XMLHttpRequest) ? new XMLHttpRequest() : new ActiveXObject("Microsoft.XMLHTTP");
 				xmlhttp.onreadystatechange = function() {
-					if (xmlhttp.readyState == STATE_READY && xmlhttp.status == STATUS_OK) {
+					if (xmlhttp.readyState == stateReady && xmlhttp.status == statusOk) {
 						callback(xmlhttp.responseText);
 					}
 				}
@@ -39,7 +41,6 @@
 			ajax("getid", function (uuid) {
 				var textarea = document.getElementById('textarea');
 				var url = "feed?id=" + uuid;
-				var TIMEOUT = 100;
 
 				function update(firstCall) {
 					ajax(url, function (data) {
