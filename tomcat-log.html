@@ -21,33 +21,40 @@
 		<textarea id="textarea" readonly autofocus></textarea>
 
 		<script type="text/javascript">
-			var textarea = document.getElementById('textarea');
-
-			var isFirstCall = true;
-
-			function update() {
+			function ajax(url, callback) {
+				var method = "GET";
 				var STATE_READY = 4;
 				var STATUS_OK = 200;
-				var TIMEOUT = 200;
 
 				var xmlhttp = (window.XMLHttpRequest) ? new XMLHttpRequest() : new ActiveXObject("Microsoft.XMLHTTP");
 				xmlhttp.onreadystatechange = function() {
 					if (xmlhttp.readyState == STATE_READY && xmlhttp.status == STATUS_OK) {
+						callback(xmlhttp.responseText);
+					}
+				}
+				xmlhttp.open(method, url, true);
+				xmlhttp.send();
+			};
+
+			ajax("getid", function (uuid) {
+				var textarea = document.getElementById('textarea');
+				var url = "feed?id=" + uuid;
+				var TIMEOUT = 100;
+
+				function update(firstCall) {
+					ajax(url, function (data) {
 						var scroll = (textarea.scrollTop + textarea.offsetHeight >= textarea.scrollHeight);
-						textarea.value += xmlhttp.responseText;
-						if (scroll || isFirstCall) {
+						textarea.value += data;
+						if (scroll || firstCall) {
 							textarea.scrollTop = textarea.scrollHeight;
 						}
 
-						isFirstCall = false;
 						setTimeout(update, TIMEOUT);
-					}
+					});
 				}
-				xmlhttp.open("GET", "feed", true);
-				xmlhttp.send();
-			}
 
-			update();
+				update(true);
+			});
 		</script>
 	</body>
 </html>
