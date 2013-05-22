@@ -24,8 +24,7 @@
 
 		<script>
 			var textarea = document.getElementById('textarea'),
-				buffer = '',
-				UPDATE_TIMEOUT = 50;
+				buffer = '';
 
 			io.connect('/')
 				.on('message', function receive(data) {
@@ -34,9 +33,7 @@
 					buffer += data;
 				});
 
-			setTimeout(update, UPDATE_TIMEOUT);
-
-			function update() {
+			setInterval(function update() {
 				if (!!buffer) {
 					var scroll = textarea.scrollTop + textarea.offsetHeight >= textarea.scrollHeight;
 
@@ -45,9 +42,7 @@
 
 					if (scroll) textarea.scrollTop = textarea.scrollHeight;
 				}
-
-				setTimeout(update, UPDATE_TIMEOUT);
-			}
+			}, 50);
 		</script>
 	</body>
 </html>
