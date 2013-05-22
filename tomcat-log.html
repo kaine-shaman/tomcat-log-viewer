@@ -4,7 +4,7 @@
 			body {
 				margin: 0;
 			}
- 
+
 			textarea {
 				background: black;
 				border: none;
@@ -18,32 +18,35 @@
 		</style>
 		<script src="/socket.io/socket.io.js"></script>
 	</head>
- 
+
 	<body>
 		<textarea id="textarea" readonly autofocus></textarea>
- 
+
 		<script>
 			var textarea = document.getElementById('textarea'),
-				isFirstCall = true,
-				socket = io.connect('/');
- 
-			socket.on('connect', function () {
-				socket.on('message', update);
-			});
- 
-			function update(data) {
-				console.log('update(); data length: ', data.length);
-				var scroll = false;
- 
-				if (textarea.scrollTop + textarea.offsetHeight >= textarea.scrollHeight) {
-					scroll = true;
+				buffer = '',
+				UPDATE_TIMEOUT = 50;
+
+			io.connect('/')
+				.on('message', function receive(data) {
+					console.log('received new data. ', data.length, ' characters.');
+
+					buffer += data;
+				});
+
+			setTimeout(update, UPDATE_TIMEOUT);
+
+			function update() {
+				if (!!buffer) {
+					var scroll = textarea.scrollTop + textarea.offsetHeight >= textarea.scrollHeight;
+
+					textarea.value += buffer;
+					buffer = '';
+
+					if (scroll) textarea.scrollTop = textarea.scrollHeight;
 				}
- 
-				textarea.value += data;
- 
-				if (scroll || isFirstCall) textarea.scrollTop = textarea.scrollHeight;
- 
-				isFirstCall = false;
+
+				setTimeout(update, UPDATE_TIMEOUT);
 			}
 		</script>
 	</body>
