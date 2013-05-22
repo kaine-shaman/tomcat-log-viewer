@@ -23,8 +23,7 @@
 		<textarea id="textarea" readonly autofocus></textarea>
 
 		<script>
-			var textarea = document.getElementById('textarea'),
-				isFirstCall = true;
+			var textarea = document.getElementById('textarea');
 
 			io.connect('/').on('message', update);
 
@@ -38,9 +37,7 @@
 
 				textarea.value += data;
 
-				if (scroll || isFirstCall) textarea.scrollTop = textarea.scrollHeight;
-
-				isFirstCall = false;
+				if (scroll) textarea.scrollTop = textarea.scrollHeight;
 			}
 		</script>
 	</body>
