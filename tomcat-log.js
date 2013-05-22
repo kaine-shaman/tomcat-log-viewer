@@ -6,11 +6,11 @@ var url = require('url');
 var port = process.argv[2] || 8888;
 var page = fs.readFileSync('tomcat-log.html').toString();
 var logFileName = '/var/log/tomcat7/catalina.out';
-var bufferingQueues = [];
-var tailingProcesses = [];
-var terminators = [];
+var connections = [];
 
-var TERMINATE_TIMEOUT = 5000;
+var LAST_BYTES = 102400;
+var TERMINATE_DELAY = 5000;
+var CHECK_DELAY = 500;
 
 function createUUID() {
 	var s = [];
@@ -28,58 +28,78 @@ function createUUID() {
 
 function Connection(uuid) {
 	var that = this;
-	that.uuid = uuid;
+	var terminator;
 
-	bufferingQueues[uuid] = [];
+	that.buffer = "";
 
-	var tailingProcess = childProcess.exec('tail -f -c 102400 ' + logFileName);
-	tailingProcess.stdout.on('data', function (data) {
-		bufferingQueues[that.uuid].push(data);
+	that.process = childProcess.exec('tail -f -c ' + LAST_BYTES + ' ' + logFileName);
+	that.process.stdout.on('data', function (data) {
+		that.buffer += data;
 	});
-	tailingProcesses[uuid] = tailingProcess;
 
-	scheduleTermination(uuid);
+	that.terminate = function () {
+		that.process.kill();
+		delete connections[uuid];
+	};
+
+	that.scheduleTermination = function () {
+		terminator = setTimeout(that.terminate, TERMINATE_DELAY);
+	};
+
+	that.cancelTermination = function () {
+		clearTimeout(terminator);
+	};
 };
 
-function terminate(uuid) {
-	tailingProcesses[uuid].kill();
-
-	delete tailingProcesses[uuid];
-	delete bufferingQueues[uuid];
-	delete terminators[uuid];
+http.ServerResponse.prototype.writeText = function(text, status) {
+	this.writeHead(status || 200, { 'Content-Type': 'text/plain' });
+	this.end(text);
 };
 
-function scheduleTermination(uuid) {
-	terminators[uuid] = setTimeout(function () { terminate(uuid) }, TERMINATE_TIMEOUT);
+http.ServerResponse.prototype.writeHtml = function(html, status) {
+	this.writeHead(status || 200, { 'Content-Type': 'text/html' });
+	this.end(html);
 };
 
-function delayTermination(uuid) {
-	clearTimeout(terminators[uuid]);
-	scheduleTermination(uuid);
-};
-
-var server = http.createServer(function (req, res) {
-	var request = url.parse(req.url, true);
-	switch (request.pathname) {
+var server = http.createServer(function (request, response) {
+	var requestUrl = url.parse(request.url, true);
+	switch (requestUrl.pathname) {
 		case '/':
-			res.writeHead(200, { 'Content-Type': 'text/html' });
-			res.end(page);
+			response.writeHtml(page);
 			break;
 		case '/getid':
 			var uuid = createUUID();
-			new Connection(uuid);
+			connections[uuid] = new Connection(uuid);
+			connections[uuid].scheduleTermination();
 
-			res.writeHead(200, { 'Content-Type': 'text/plain' });
-			res.end(uuid);
+			response.writeText(uuid);
 			break;
 		case '/feed':
-			var uuid = request.query.id;
-			var data = bufferingQueues[uuid].shift() || "";
+			var uuid = requestUrl.query.id;
+			var connection = connections[uuid];
+			if (!connection) {
+				response.writeText("uuid is not valid", 400);
+				break;
+			}
 
-			delayTermination(uuid);
+			connection.cancelTermination();
 
-			res.writeHead(200, { 'Content-Type': 'text/plain' });
-			res.end(data);
+			function checkBuffer() {
+				if (connection.buffer == "") {
+					setTimeout(checkBuffer, CHECK_DELAY);
+					return;
+				}
+
+				response.writeText(connection.buffer);
+
+				connection.buffer = "";
+				connection.scheduleTermination();
+			};
+
+			checkBuffer();
+			break;
+		default:
+			response.writeText("bad request", 400);
 			break;
 	}
 });

@@ -21,8 +21,6 @@
 		<textarea id="textarea" readonly autofocus></textarea>
 
 		<script type="text/javascript">
-			var TIMEOUT = 100;
-
 			function ajax(url, callback) {
 				var method = "GET";
 				var stateReady = 4;
@@ -50,7 +48,7 @@
 							textarea.scrollTop = textarea.scrollHeight;
 						}
 
-						setTimeout(update, TIMEOUT);
+						setTimeout(update, 0);
 					});
 				}
 
