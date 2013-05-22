@@ -23,21 +23,30 @@
 		<textarea id="textarea" readonly autofocus></textarea>
 
 		<script>
-			var textarea = document.getElementById('textarea');
+			var textarea = document.getElementById('textarea'),
+				buffer = '',
+				UPDATE_TIMEOUT = 50;
 
-			io.connect('/').on('message', update);
+			io.connect('/')
+				.on('message', function receive(data) {
+					console.log('received new data. ', data.length, ' characters.');
 
-			function update(data) {
-				console.log('update(); data length: ', data.length);
-				var scroll = false;
+					buffer += data;
+				});
 
-				if (textarea.scrollTop + textarea.offsetHeight >= textarea.scrollHeight) {
-					scroll = true;
+			setTimeout(update, UPDATE_TIMEOUT);
+
+			function update() {
+				if (!!buffer) {
+					var scroll = textarea.scrollTop + textarea.offsetHeight >= textarea.scrollHeight;
+
+					textarea.value += buffer;
+					buffer = '';
+
+					if (scroll) textarea.scrollTop = textarea.scrollHeight;
 				}
 
-				textarea.value += data;
-
-				if (scroll) textarea.scrollTop = textarea.scrollHeight;
+				setTimeout(update, UPDATE_TIMEOUT);
 			}
 		</script>
 	</body>
