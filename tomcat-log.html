@@ -24,12 +24,9 @@
 
 		<script>
 			var textarea = document.getElementById('textarea'),
-				isFirstCall = true,
-				socket = io.connect('/');
+				isFirstCall = true;
 
-			socket.on('connect', function () {
-				socket.on('message', update);
-			});
+			io.connect('/').on('message', update);
 
 			function update(data) {
 				console.log('update(); data length: ', data.length);
