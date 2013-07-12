@@ -2,7 +2,7 @@ var fs = require('fs');
 var child_process = require('child_process');
 
 var port = process.argv[2] || 8888;
-var logFileName = '/var/log/tomcat7/catalina.out';
+var logFileName = process.argv[3] || '/var/log/tomcat7/catalina.out';
 var startLogSize = 102400;
 
 var indexPage = fs.readFileSync('tomcat-log.html').toString();
