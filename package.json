@@ -1,0 +1,22 @@
+{
+	"name": "tomcat-log-viewer",
+	"version": "0.0.0",
+	"description": "",
+	"main": "tomcat-log.js",
+	"dependencies": {
+		"socket.io": "~0.9.14"
+	},
+	"devDependencies": {},
+	"scripts": {
+		"test": "echo \"Error: no test specified\" && exit 1"
+	},
+	"repository": {
+		"type": "git",
+		"url": "git://github.com/kaine-shaman/tomcat-log-viewer.git"
+	},
+	"author": "",
+	"license": "",
+	"bugs": {
+		"url": "https://github.com/kaine-shaman/tomcat-log-viewer/issues"
+	}
+}

@@ -34,11 +34,9 @@ function runTail() {
 	child_process
 		.exec('tail -f -c 0 ' + logFileName)
 		.on('exit', function (code, signal) {
-			if (code !== null) {
-				console.log('tail failed, restaring.');
+			console.log('tail exit', code, signal);
 
-				runTail();
-			}
+			runTail();
 		})
 		.stdout.on('data', function (data) {
 			console.log('tail reported new data (length: ' + data.length + ')');
