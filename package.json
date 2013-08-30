@@ -2,7 +2,7 @@
 	"name": "tomcat-log-viewer",
 	"version": "0.0.0",
 	"description": "",
-	"main": "tomcat-log.js",
+	"main": "app.js",
 	"dependencies": {
 		"socket.io": "~0.9.14"
 	},
