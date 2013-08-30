@@ -5,7 +5,7 @@ var port = process.argv[2] || 8888;
 var logFileName = process.argv[3] || '/var/log/tomcat7/catalina.out';
 var startLogSize = 102400;
 
-var indexPage = fs.readFileSync('tomcat-log.html').toString();
+var indexPage = fs.readFileSync('page.html').toString();
 
 var app = require('http')
 	.createServer(function (req, res) {

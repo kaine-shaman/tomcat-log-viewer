@@ -1,0 +1,61 @@
+<html>
+	<head>
+		<style type="text/css">
+			body {
+				margin: 0;
+			}
+
+			textarea {
+				background: black;
+				border: none;
+				color: rgb(0, 180, 0);
+				margin: 0;
+				resize: none;
+				outline: none;
+				width: 100%;
+				height: 100%;
+			}
+		</style>
+		<script src="/socket.io/socket.io.js"></script>
+	</head>
+
+	<body>
+		<textarea id="textarea" readonly autofocus></textarea>
+
+		<script>
+			(function () {
+				var textarea = document.getElementById('textarea'),
+					buffer = '',
+					nextFrame = window.requestAnimationFrame
+						|| window.webkitRequestAnimationFrame
+						|| window.mozRequestAnimationFrame
+						|| window.oRequestAnimationFrame
+						|| window.msRequestAnimationFrame
+						|| function (callback) {
+							return window.setTimeout(callback, 50 /* we doesn't need 60 fps */);
+						},
+					frame = false;
+
+				io.connect('/')
+					.on('message', function receive(data) {
+						buffer += data;
+
+						if (!frame) frame = nextFrame(update);
+					});
+
+				function update() {
+					if (!!buffer) {
+						var scroll = textarea.scrollTop + textarea.offsetHeight >= textarea.scrollHeight;
+
+						textarea.value += buffer;
+						buffer = '';
+
+						if (scroll) textarea.scrollTop = textarea.scrollHeight;
+					}
+
+					frame = false;
+				}
+			})();
+		</script>
+	</body>
+</html>
