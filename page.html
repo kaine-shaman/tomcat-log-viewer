@@ -23,26 +23,39 @@
 		<textarea id="textarea" readonly autofocus></textarea>
 
 		<script>
-			var textarea = document.getElementById('textarea'),
-				buffer = '';
+			(function () {
+				var textarea = document.getElementById('textarea'),
+					buffer = '',
+					nextFrame = window.requestAnimationFrame
+						|| window.webkitRequestAnimationFrame
+						|| window.mozRequestAnimationFrame
+						|| window.oRequestAnimationFrame
+						|| window.msRequestAnimationFrame
+						|| function (callback) {
+							return window.setTimeout(callback, 50 /* we doesn't need 60 fps */);
+						},
+					frame = false;
 
-			io.connect('/')
-				.on('message', function receive(data) {
-					console.log('received new data. ', data.length, ' characters.');
+				io.connect('/')
+					.on('message', function receive(data) {
+						buffer += data;
 
-					buffer += data;
-				});
+						if (!frame) frame = nextFrame(update);
+					});
 
-			setInterval(function update() {
-				if (!!buffer) {
-					var scroll = textarea.scrollTop + textarea.offsetHeight >= textarea.scrollHeight;
+				function update() {
+					if (!!buffer) {
+						var scroll = textarea.scrollTop + textarea.offsetHeight >= textarea.scrollHeight;
 
-					textarea.value += buffer;
-					buffer = '';
+						textarea.value += buffer;
+						buffer = '';
 
-					if (scroll) textarea.scrollTop = textarea.scrollHeight;
+						if (scroll) textarea.scrollTop = textarea.scrollHeight;
+					}
+
+					frame = false;
 				}
-			}, 50);
+			})();
 		</script>
 	</body>
 </html>
